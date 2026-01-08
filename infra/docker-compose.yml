@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ---------- TiDB Cluster ----------
   pd:
@@ -13,10 +11,10 @@ services:
       - --peer-urls=http://0.0.0.0:2380
       - --advertise-peer-urls=http://pd:2380
       - --initial-cluster=pd=http://pd:2380
-    ports:
-      - "2379:2379"
     volumes:
       - pd-data:/data/pd
+    ports:
+      - "2379:2379"
 
   tikv:
     image: pingcap/tikv:v7.5.1
@@ -26,6 +24,7 @@ services:
     command:
       - --pd=pd:2379
       - --addr=0.0.0.0:20160
+      - --advertise-addr=tikv:20160
       - --data-dir=/data/tikv
     volumes:
       - tikv-data:/data/tikv
@@ -41,6 +40,30 @@ services:
       - --path=pd:2379
     ports:
       - "4000:4000"
+    volumes:
+      - ./db-init:/docker-entrypoint-initdb.d
+
+  # ---------- DB INIT (CRITICAL) ----------
+  db-init:
+    image: mysql:8
+    container_name: db-init
+    depends_on:
+      - tidb
+    volumes:
+      - ./db-init:/db-init
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "
+      echo 'Waiting for TiDB to be ready...';
+      until mysql -h tidb -P 4000 -u root -e 'SELECT 1' >/dev/null 2>&1; do
+        echo 'TiDB not ready yet...';
+        sleep 5;
+      done;
+      echo 'TiDB is ready. Initializing database...';
+      mysql -h tidb -P 4000 -u root < /db-init/01-init.sql;
+      echo 'Database initialized successfully';
+      "
+    restart: "no"
 
   # ---------- Kafka ----------
   zookeeper:
@@ -61,10 +84,8 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1

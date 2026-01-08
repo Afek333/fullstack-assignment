@@ -1,22 +1,22 @@
 require("dotenv").config();
 const express = require("express");
 const { v4: uuidv4 } = require("uuid");
+const bcrypt = require("bcrypt");
 
 const db = require("./db");
 const logger = require("./logger");
-
-const app = express();
 const authMiddleware = require("./auth");
 
+const app = express();
 app.use(express.json());
-
-app.get("/me", authMiddleware, (req, res) => {
-  res.json({ userId: req.userId });
-});
-
+app.use(express.static("public"));
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+app.get("/me", authMiddleware, (req, res) => {
+  res.json({ userId: req.userId });
 });
 
 app.post("/login", async (req, res) => {
@@ -28,7 +28,7 @@ app.post("/login", async (req, res) => {
 
   try {
     const [users] = await db.query(
-      "SELECT id, password_hash FROM users WHERE email = ?",
+      "SELECT id, password FROM users WHERE email = ?",
       [email]
     );
 
@@ -38,8 +38,8 @@ app.post("/login", async (req, res) => {
 
     const user = users[0];
 
-    // simple password check (for assignment)
-    if (user.password_hash !== password) {
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -50,7 +50,6 @@ app.post("/login", async (req, res) => {
       [user.id, token]
     );
 
-    // log login event (JSON)
     logger.info({
       timestamp: new Date().toISOString(),
       userId: user.id,
