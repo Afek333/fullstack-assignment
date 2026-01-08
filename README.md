@@ -34,3 +34,42 @@ The system consists of the following components:
 
 ## Repository Structure
 
+├── api/
+│ ├── index.js # REST API
+│ ├── db.js # TiDB connection
+│ ├── auth.js # Authentication middleware
+│ ├── logger.js # log4js configuration
+│ ├── Dockerfile
+│ └── package.json
+│
+├── consumer/
+│ ├── index.js # Kafka consumer
+│ └── Dockerfile
+│
+├── infra/
+│ ├── docker-compose.yml
+│ └── db-init/
+│ └── 01-init.sql # Database schema and seed data
+│
+├── .gitignore
+└── README.md
+
+
+---
+
+## Prerequisites
+
+- Docker
+- Docker Compose
+- Git
+
+No additional software is required on the host machine.
+
+---
+
+## Running the System
+
+From the project root directory:
+
+```bash
+docker compose -f infra/docker-compose.yml up --build
