@@ -1,0 +1,39 @@
+services:
+  pd:
+    image: pingcap/pd:latest
+    container_name: tidb-pd
+    command:
+      - --name=pd
+      - --data-dir=/data/pd
+      - --client-urls=http://0.0.0.0:2379
+      - --peer-urls=http://0.0.0.0:2380
+      - --initial-cluster=pd=http://pd:2380
+    volumes:
+      - pd-data:/data
+    ports:
+      - "2379:2379"
+
+  tikv:
+    image: pingcap/tikv:latest
+    container_name: tidb-tikv
+    command:
+      - --pd=pd:2379
+      - --addr=0.0.0.0:20160
+      - --data-dir=/data/tikv
+    depends_on:
+      - pd
+    volumes:
+      - tikv-data:/data
+
+  tidb:
+    image: pingcap/tidb:latest
+    container_name: tidb
+    ports:
+      - "4000:4000"
+    depends_on:
+      - pd
+      - tikv
+
+volumes:
+  pd-data:
+  tikv-data:
