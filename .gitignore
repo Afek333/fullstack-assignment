@@ -1,28 +1,3 @@
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
+node_modules
 .env
-.env.*
-
-# Build outputs
-dist/
-build/
-
-# Logs
-logs/
 *.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Docker
-*.tar
-
-# IDE
-.vscode/
-.idea/

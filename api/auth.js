@@ -27,6 +27,7 @@ async function authMiddleware(req, res, next) {
     req.userId = rows[0].user_id;
     next();
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const { v4: uuidv4 } = require("uuid");
-const bcrypt = require("bcrypt");
 
 const db = require("./db");
 const logger = require("./logger");
@@ -14,6 +13,10 @@ app.use(express.static("public"));
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+app.get("/me", authMiddleware, (req, res) => {
+  res.json({ userId: req.userId });
 });
 
 app.post("/login", async (req, res) => {
@@ -35,9 +38,8 @@ app.post("/login", async (req, res) => {
 
     const user = users[0];
 
-    const passwordOk = await bcrypt.compare(password, user.password);
-
-    if (!passwordOk) {
+    // ⚠️ Plain-text password check (intentional for assignment)
+    if (user.password !== password) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -60,10 +62,6 @@ app.post("/login", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
-});
-
-app.get("/me", authMiddleware, (req, res) => {
-  res.json({ userId: req.userId });
 });
 
 app.listen(3000, "0.0.0.0", () => {

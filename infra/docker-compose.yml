@@ -40,30 +40,6 @@ services:
       - --path=pd:2379
     ports:
       - "4000:4000"
-    volumes:
-      - ./db-init:/docker-entrypoint-initdb.d
-
-  # ---------- DB INIT (CRITICAL) ----------
-  db-init:
-    image: mysql:8
-    container_name: db-init
-    depends_on:
-      - tidb
-    volumes:
-      - ./db-init:/db-init
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      "
-      echo 'Waiting for TiDB to be ready...';
-      until mysql -h tidb -P 4000 -u root -e 'SELECT 1' >/dev/null 2>&1; do
-        echo 'TiDB not ready yet...';
-        sleep 5;
-      done;
-      echo 'TiDB is ready. Initializing database...';
-      mysql -h tidb -P 4000 -u root < /db-init/01-init.sql;
-      echo 'Database initialized successfully';
-      "
-    restart: "no"
 
   # ---------- Kafka ----------
   zookeeper:
@@ -97,17 +73,15 @@ services:
     depends_on:
       - kafka
     entrypoint: ["/bin/bash", "-lc"]
-    command: >
-      "
-      echo 'Waiting for Kafka...';
-      cub kafka-ready -b kafka:9092 1 60;
-      kafka-topics --bootstrap-server kafka:9092
-        --create --if-not-exists
-        --topic appdb-changes
-        --partitions 1
-        --replication-factor 1;
-      echo 'Kafka topic appdb-changes ready';
-      "
+    command: |
+      echo "Waiting for Kafka..."
+      cub kafka-ready -b kafka:9092 1 60
+      kafka-topics --bootstrap-server kafka:9092 \
+        --create --if-not-exists \
+        --topic appdb-changes \
+        --partitions 1 \
+        --replication-factor 1
+      echo "Kafka topic appdb-changes ready"
 
   # ---------- TiDB CDC ----------
   cdc:
@@ -126,16 +100,16 @@ services:
     container_name: cdc-init
     depends_on:
       - cdc
+      - kafka
     entrypoint: ["/bin/sh", "-c"]
-    command: >
-      "
-      echo 'Waiting for TiCDC...';
-      sleep 15;
-      ticdc cli changefeed create
-        --pd=http://pd:2379
-        --sink-uri='kafka://kafka:9092/appdb-changes';
-      echo 'CDC changefeed created';
-      "
+    command: |
+      echo "Waiting for TiCDC..."
+      sleep 20
+      /cdc cli changefeed create \
+        --pd=http://pd:2379 \
+        --sink-uri="kafka://kafka:9092/appdb-changes"
+      echo "CDC changefeed created successfully"
+    restart: "no"
 
   # ---------- API ----------
   api:
