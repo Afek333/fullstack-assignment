@@ -2,38 +2,60 @@
 
 This project was built as part of an **SRE (Site Reliability Engineering) home assignment**.
 
-The goal of the assignment is to demonstrate the ability to design, deploy, and operate a distributed system with:
-- Application services
-- Database infrastructure
-- Messaging systems
-- Observability and logging
-- Full containerization and reproducibility
+The objective is to demonstrate the ability to **design, deploy, and operate a production-like distributed system**, with a strong emphasis on reliability, reproducibility, and operational thinking.
 
-The entire system can be started with a single Docker Compose command.
+The entire system is fully containerized and can be started with **a single Docker Compose command**.
+
+---
+
+## Objectives
+
+This project demonstrates the following core capabilities:
+
+- Application service design
+- Distributed database infrastructure
+- Event-driven architecture
+- Change Data Capture (CDC)
+- Observability and structured logging
+- Full containerization and reproducibility
+- Operational readiness from day one
 
 ---
 
 ## System Architecture
 
-The system consists of the following components:
+The system is composed of the following services:
 
-- **API Service (Node.js + Express)**  
-  Provides authentication, token management, and REST endpoints.
+### API Service (Node.js + Express)
+- Provides authentication and token-based access
+- Exposes REST endpoints
+- Stateless design suitable for horizontal scaling
 
-- **Database (TiDB Cluster)**  
-  Distributed SQL database composed of PD, TiKV, and TiDB components.
+### Database – TiDB Cluster
+- Distributed SQL database
+- Composed of:
+  - **PD** – cluster metadata and scheduling
+  - **TiKV** – distributed key-value storage
+  - **TiDB** – SQL interface
 
-- **Change Data Capture (TiDB CDC)**  
-  Captures database changes in real time and streams them to Kafka.
+### Change Data Capture (TiDB CDC)
+- Streams real-time database changes
+- Publishes change events directly to Kafka
 
-- **Message Broker (Apache Kafka)**  
-  Receives CDC events from TiDB.
+### Message Broker – Apache Kafka
+- Acts as the event backbone
+- Receives CDC events from TiDB
+- Enables asynchronous and decoupled processing
 
-- **Consumer Service (Node.js)**  
-  Consumes Kafka messages and processes database change events.
+### Consumer Service (Node.js)
+- Subscribes to Kafka topics
+- Processes database change events
+- Designed to be independently scalable
 
-- **Logging & Observability**  
-  Structured JSON logging using `log4js`.
+### Observability & Logging
+- Structured JSON logging using `log4js`
+- Logs include timestamps, actions, user IDs, and source IPs
+- Ready for ingestion into centralized logging systems
 
 ---
 
@@ -67,11 +89,13 @@ Copy code
 
 ## Prerequisites
 
+The following tools are required:
+
 - Docker
 - Docker Compose
 - Git
 
-No additional software is required on the host machine.
+No additional dependencies are required on the host machine.
 
 ---
 
@@ -81,11 +105,11 @@ From the project root directory:
 
 ```bash
 docker compose -f infra/docker-compose.yml up --build
-This command will:
+This single command will:
 
 Start the TiDB cluster (PD, TiKV, TiDB)
 
-Initialize the database schema automatically
+Automatically initialize the database schema and seed data
 
 Start Kafka and Zookeeper
 
@@ -93,7 +117,9 @@ Start TiDB CDC and create a changefeed to Kafka
 
 Start the API service
 
-Start the Kafka consumer
+Start the Kafka consumer service
+
+The system is fully reproducible and safe to restart at any time.
 
 API Endpoints
 Health Check
@@ -141,9 +167,9 @@ Copy code
   "userId": 1
 }
 Database Initialization
-The database is initialized automatically using a dedicated db-init container.
+Database initialization is handled automatically by a dedicated db-init container.
 
-It performs:
+Initialization steps include:
 
 Database creation
 
@@ -151,52 +177,74 @@ Table creation (users, tokens)
 
 Seed user insertion
 
-This ensures the system is fully reproducible and safe to restart.
+This guarantees:
+
+Idempotent startup
+
+No manual intervention
+
+Safe re-deployment and recovery
 
 Observability & Logging
-Application logs are written in structured JSON format
+All application logs are emitted in structured JSON format
 
-Login events are logged with timestamp, user ID, action, and source IP
+Login events are logged with:
 
-Logs are suitable for ingestion into centralized logging systems
+Timestamp
+
+User ID
+
+Action
+
+Source IP
+
+Logs are suitable for ingestion into systems such as:
+
+ELK Stack
+
+Loki
+
+Cloud logging platforms
 
 SRE Considerations
-This project demonstrates key SRE principles:
+This project intentionally reflects real SRE design principles:
 
-Service isolation using containers
+Strong service isolation using containers
 
-Explicit dependencies between services
+Explicit service dependencies
 
-Idempotent initialization
+Stateless application design
 
-Stateless API design
+Distributed data storage
 
-Distributed database usage
+Event-driven communication
 
-Event-driven architecture
+Reproducible infrastructure
 
-Operational reproducibility
+Operational-first mindset
 
 Future Improvements
-Prometheus metrics
+Potential enhancements include:
+
+Prometheus metrics exposure
 
 Grafana dashboards
 
 Kubernetes manifests
 
-Secrets management
+Secret management solutions
 
 Alerting rules
 
-CI/CD pipeline
+CI/CD pipeline integration
 
 Summary
-This project reflects real-world SRE responsibilities:
+This project mirrors real-world SRE responsibilities:
 
-Designing resilient systems
+Designing reliable distributed systems
 
-Managing distributed infrastructure
+Managing complex infrastructure components
 
-Ensuring reproducibility
+Ensuring reproducibility and recoverability
 
-Thinking in terms of reliability and operations
+Thinking beyond code into operations and lifecycle management
