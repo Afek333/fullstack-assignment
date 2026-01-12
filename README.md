@@ -200,5 +200,3 @@ Managing distributed infrastructure
 Ensuring reproducibility
 
 Thinking in terms of reliability and operations
-
-הכל בCODEBLOCK
